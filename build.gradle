@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.moa'
 version = '0.0.1-SNAPSHOT'
-description = 'Shared household finance app MOA's RESTful backend API'
+description = 'Shared household finance app MOAs RESTful backend API'
 
 java {
 	toolchain {
