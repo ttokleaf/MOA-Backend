@@ -1,0 +1,34 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        # 프론트-백 분리 시 쿠키 공유가 필요하면 None+Secure(https) 권장
+        # 개발 중 http면 Lax 도 가능. 운영은 반드시 HTTPS + None + Secure
+        same-site: Lax
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:kakao;MODE=MYSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+
+
+app:
+  frontend-origin: "http://localhost:3000"
+
+kakao:
+  client_id: ${KAKAO_CLIENT_ID}
+  redirect_uri: http://localhost:8080/auth/login/kakao
+  token-host: https://kauth.kakao.com
+  api-host: https://kapi.kakao.com
