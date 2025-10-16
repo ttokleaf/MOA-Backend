@@ -1,4 +1,4 @@
-package com.moa.moa_backend.KakaoAuth.dto;
+package com.moa.moa_backend.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

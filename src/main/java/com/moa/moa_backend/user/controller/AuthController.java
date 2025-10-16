@@ -1,7 +1,7 @@
-package com.moa.moa_backend.KakaoAuth.controller;
+package com.moa.moa_backend.user.controller;
 
-import com.moa.moa_backend.KakaoAuth.domain.User;
-import com.moa.moa_backend.KakaoAuth.service.AuthService;
+import com.moa.moa_backend.user.domain.User;
+import com.moa.moa_backend.user.service.AuthService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

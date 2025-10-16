@@ -1,4 +1,4 @@
-package com.moa.moa_backend.KakaoAuth.domain;
+package com.moa.moa_backend.user.domain;
 
 
 import jakarta.persistence.*;

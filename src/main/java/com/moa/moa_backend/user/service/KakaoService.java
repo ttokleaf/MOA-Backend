@@ -1,7 +1,7 @@
-package com.moa.moa_backend.KakaoAuth.service;
+package com.moa.moa_backend.user.service;
 
-import com.moa.moa_backend.KakaoAuth.dto.KakaoTokenResponseDto;
-import com.moa.moa_backend.KakaoAuth.dto.KakaoUserResponseDto;
+import com.moa.moa_backend.user.dto.KakaoTokenResponseDto;
+import com.moa.moa_backend.user.dto.KakaoUserResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;

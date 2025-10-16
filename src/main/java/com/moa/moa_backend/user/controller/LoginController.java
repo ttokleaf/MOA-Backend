@@ -1,4 +1,4 @@
-package com.moa.moa_backend.KakaoAuth.controller;
+package com.moa.moa_backend.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
