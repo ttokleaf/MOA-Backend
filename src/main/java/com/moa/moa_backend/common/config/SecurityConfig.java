@@ -1,4 +1,4 @@
-package com.moa.moa_backend.KakaoAuth.config;
+package com.moa.moa_backend.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package com.moa.moa_backend.KakaoAuth.util;
+package com.moa.moa_backend.common.util;
 
 import jakarta.servlet.http.HttpSession;
 
