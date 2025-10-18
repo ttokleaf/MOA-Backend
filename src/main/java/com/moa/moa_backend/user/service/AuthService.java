@@ -82,4 +82,17 @@ public class AuthService {
         if (id == null) return null;
         return userRepository.findById((Long) id).orElse(null);
     }
+
+    public User createOrGetTestUser() {
+        // 테스트용 카카오 ID (실제 카카오 ID와 충돌하지 않도록 큰 값 사용)
+        Long testKakaoId = 999999999L;
+        
+        return userRepository.findByKakaoId(testKakaoId)
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .kakaoId(testKakaoId)
+                        .nickname("테스트사용자")
+                        .email("test@example.com")
+                        .profileImageUrl("https://via.placeholder.com/150")
+                        .build()));
+    }
 }

@@ -6,10 +6,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -50,6 +58,7 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
     })
+    @SecurityRequirement(name = "cookieAuth")
     @GetMapping("/me")
     public User me(HttpSession session) {
         User user = authService.currentUser(session);
@@ -63,8 +72,35 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "로그아웃 성공")
     })
+    @SecurityRequirement(name = "cookieAuth")
     @PostMapping("/logout")
     public void logout(HttpSession session) {
         authService.logout(session);
+    }
+
+    @Operation(summary = "테스트용 로그인", description = "Swagger 테스트를 위한 임시 로그인 엔드포인트입니다. 테스트용 사용자로 자동 로그인됩니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "테스트 로그인 성공"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/test-login")
+    public User testLogin(HttpSession session) {
+        // 테스트용 사용자 생성 또는 조회
+        User testUser = authService.createOrGetTestUser();
+        
+        // 세션에 로그인 정보 저장
+        session.setAttribute("LOGIN_USER_ID", testUser.getId());
+        
+        // Spring Security 인증 설정
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(testUser.getId(), null, authorities);
+        
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        
+        return testUser;
     }
 }
