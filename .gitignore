@@ -2,6 +2,8 @@
 todo.txt
 application.yml
 PROJECT_STRUCTURE.md
+test-commands.md
+실용적인_테스트_가이드.md
 
 # Gradle
 .gradle/
