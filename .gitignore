@@ -4,6 +4,8 @@ application.yml
 PROJECT_STRUCTURE.md
 test-commands.md
 실용적인_테스트_가이드.md
+POSTMAN_TESTING_GUIDE.md
+postman_collection.json
 
 # Gradle
 .gradle/

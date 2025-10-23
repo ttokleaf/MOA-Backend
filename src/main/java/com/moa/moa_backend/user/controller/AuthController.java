@@ -8,16 +8,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -78,29 +73,78 @@ public class AuthController {
         authService.logout(session);
     }
 
-    @Operation(summary = "테스트용 로그인", description = "Swagger 테스트를 위한 임시 로그인 엔드포인트입니다. 테스트용 사용자로 자동 로그인됩니다.")
+
+    @Operation(summary = "테스트 사용자1 로그인", description = "기존 세션을 무효화하고 새로운 세션으로 테스트 사용자1에 로그인합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "테스트 로그인 성공"),
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
     @PostMapping("/test-login")
-    public User testLogin(HttpSession session) {
-        // 테스트용 사용자 생성 또는 조회
-        User testUser = authService.createOrGetTestUser();
+    public User testLogin(HttpServletRequest request) {
+        // 기존 세션 무효화
+        HttpSession oldSession = request.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
         
-        // 세션에 로그인 정보 저장
-        session.setAttribute("LOGIN_USER_ID", testUser.getId());
+        // 새로운 세션 강제 생성
+        HttpSession newSession = request.getSession(true);
         
-        // Spring Security 인증 설정
-        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(testUser.getId(), null, authorities);
+        return authService.loginAsTestUserWithNewSession(newSession);
+    }
+
+    @Operation(summary = "테스트 사용자2 로그인", description = "기존 세션을 무효화하고 새로운 세션으로 테스트 사용자2에 로그인합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/test-login-user2")
+    public User testLoginUser2(HttpServletRequest request) {
+        // 기존 세션 무효화
+        HttpSession oldSession = request.getSession(false);
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
         
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        // 새로운 세션 강제 생성
+        HttpSession newSession = request.getSession(true);
         
-        return testUser;
+        return authService.loginAsTestUser2WithNewSession(newSession);
+    }
+
+    @Operation(summary = "테스트 환경 초기화", description = "테스트용 사용자들과 가계부를 생성합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "초기화 성공"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @PostMapping("/test-setup")
+    public ResponseEntity<String> testSetup() {
+        try {
+            // 테스트용 사용자들 생성
+            authService.createOrGetTestUser();
+            authService.createOrGetTestUser2();
+            
+            return ResponseEntity.ok("테스트 환경이 초기화되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("테스트 환경 초기화 실패: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "세션 정보 조회", description = "현재 세션의 상세 정보를 조회합니다. (디버깅용)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공")
+    })
+    @GetMapping("/session-info")
+    public ResponseEntity<String> getSessionInfo(HttpSession session) {
+        StringBuilder info = new StringBuilder();
+        info.append("세션 ID: ").append(session.getId()).append("\n");
+        info.append("생성 시간: ").append(session.getCreationTime()).append("\n");
+        info.append("마지막 접근 시간: ").append(session.getLastAccessedTime()).append("\n");
+        info.append("최대 비활성 간격: ").append(session.getMaxInactiveInterval()).append("\n");
+        
+        Object userId = session.getAttribute("LOGIN_USER_ID");
+        info.append("로그인 사용자 ID: ").append(userId != null ? userId : "없음").append("\n");
+        
+        return ResponseEntity.ok(info.toString());
     }
 }
