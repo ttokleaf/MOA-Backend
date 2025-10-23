@@ -77,9 +77,92 @@ public class AuthService {
         session.invalidate();
     }
 
+    public void logoutWithoutInvalidate(HttpSession session) {
+        // 세션을 무효화하지 않고 로그아웃만 처리
+        session.removeAttribute("LOGIN_USER_ID");
+        session.removeAttribute("KAKAO_ACCESS_TOKEN");
+        session.removeAttribute("KAKAO_REFRESH_TOKEN");
+        session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        
+        // SecurityContext 초기화
+        SecurityContextHolder.clearContext();
+    }
+
     public User currentUser(HttpSession session) {
         Object id = session.getAttribute("LOGIN_USER_ID");
         if (id == null) return null;
         return userRepository.findById((Long) id).orElse(null);
     }
+
+    public User createOrGetTestUser() {
+        // 테스트용 카카오 ID (실제 카카오 ID와 충돌하지 않도록 큰 값 사용)
+        Long testKakaoId = 999999999L;
+        
+        return userRepository.findByKakaoId(testKakaoId)
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .kakaoId(testKakaoId)
+                        .nickname("테스트사용자")
+                        .email("test@example.com")
+                        .profileImageUrl("https://via.placeholder.com/150")
+                        .build()));
+    }
+
+    public User createOrGetTestUser2() {
+        // 두 번째 테스트용 카카오 ID
+        Long testKakaoId2 = 999999998L;
+        
+        return userRepository.findByKakaoId(testKakaoId2)
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .kakaoId(testKakaoId2)
+                        .nickname("테스트사용자2")
+                        .email("test2@example.com")
+                        .profileImageUrl("https://via.placeholder.com/150")
+                        .build()));
+    }
+
+
+    public User loginAsTestUserWithNewSession(HttpSession session) {
+        // 테스트용 사용자 생성 또는 조회
+        User testUser = createOrGetTestUser();
+        
+        // 새로운 세션에 로그인 정보 저장
+        session.setAttribute("LOGIN_USER_ID", testUser.getId());
+        
+        // Spring Security 인증 설정
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(testUser.getId(), null, authorities);
+        
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        
+        log.info("[DEBUG] 새 세션으로 테스트 사용자1 로그인 - 세션 ID: {}, 사용자 ID: {}", session.getId(), testUser.getId());
+        
+        return testUser;
+    }
+
+    public User loginAsTestUser2WithNewSession(HttpSession session) {
+        // 두 번째 테스트용 사용자 생성 또는 조회
+        User testUser = createOrGetTestUser2();
+        
+        // 새로운 세션에 로그인 정보 저장
+        session.setAttribute("LOGIN_USER_ID", testUser.getId());
+        
+        // Spring Security 인증 설정
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(testUser.getId(), null, authorities);
+        
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        
+        log.info("[DEBUG] 새 세션으로 테스트 사용자2 로그인 - 세션 ID: {}, 사용자 ID: {}", session.getId(), testUser.getId());
+        
+        return testUser;
+    }
+
 }

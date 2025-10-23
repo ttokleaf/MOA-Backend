@@ -18,11 +18,12 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration conf = new CorsConfiguration();
-        conf.setAllowedOrigins(List.of(frontendOrigin));
+        conf.setAllowedOrigins(List.of(frontendOrigin, "https://kauth.kakao.com", "http://localhost:8080"));
         conf.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        conf.setAllowedHeaders(List.of("Content-Type", "Authorization"));
+        conf.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"));
         conf.setAllowCredentials(true); // 쿠키 전송 허용
         conf.setMaxAge(3600L);
+        conf.setExposedHeaders(List.of("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", conf);

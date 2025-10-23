@@ -20,11 +20,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // SPA-Cookie 조합 시 CSRF를 별도 처리 권장(데모용 disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/login/**", "/api/auth/kakao-token").permitAll()
+                        .requestMatchers("/api/login/**", "/api/auth/kakao-token", "/api/auth/login/kakao/**", "/api/auth/test-login", "/api/auth/test-login-user2", "/api/auth/test-setup", "/api/auth/session-info").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
+                        .requestMatchers("/swagger-resources/**").permitAll()
+                        .requestMatchers("/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .headers(h -> h.frameOptions(f -> f.disable())); // H2 콘솔용
+                .headers(h -> h
+                        .frameOptions(f -> f.disable()) // H2 콘솔용
+                        .contentTypeOptions(cto -> cto.disable()) // OAuth 콜백용
+                        .httpStrictTransportSecurity(hsts -> hsts.disable()) // 개발환경용
+                );
 
         return http.build();
     }
