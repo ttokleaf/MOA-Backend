@@ -73,7 +73,7 @@ public class AccountBookController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<AccountBookResponseDto> getAccountBook(
-            @Parameter(description = "가계부 ID", required = true) @PathVariable Long id,
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("id") Long id,
             HttpSession session) {
         
         User user = authService.currentUser(session);
@@ -98,7 +98,7 @@ public class AccountBookController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<AccountBookResponseDto> updateAccountBook(
-            @Parameter(description = "가계부 ID", required = true) @PathVariable Long id,
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("id") Long id,
             @Valid @RequestBody AccountBookUpdateRequestDto requestDto,
             HttpSession session) {
         
@@ -123,7 +123,7 @@ public class AccountBookController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccountBook(
-            @Parameter(description = "가계부 ID", required = true) @PathVariable Long id,
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("id") Long id,
             HttpSession session) {
         
         User user = authService.currentUser(session);
@@ -171,8 +171,8 @@ public class AccountBookController {
     })
     @DeleteMapping("/{id}/users/{userId}")
     public ResponseEntity<Void> removeUserFromAccountBook(
-            @Parameter(description = "가계부 ID", required = true) @PathVariable Long id,
-            @Parameter(description = "사용자 ID", required = true) @PathVariable Long userId,
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("id") Long id,
+            @Parameter(description = "사용자 ID", required = true) @PathVariable("userId") Long userId,
             HttpSession session) {
         
         User user = authService.currentUser(session);

@@ -34,24 +34,24 @@ public class AuthController {
     })
     @GetMapping("/kakao-token")
     public User handleKakaoCallback(
-            @Parameter(description = "카카오 인증 코드", required = true) @RequestParam String code, 
+            @Parameter(description = "카카오 인증 코드", required = true) @RequestParam("code") String code, 
             HttpSession session) {
         // 로그인 처리 + 세션 수립 (JSESSIONID가 Set-Cookie로 내려감)
         return authService.loginWithKakaoCode(code, session);
     }
 
-    @Operation(summary = "카카오 로그인 콜백 (카카오 리다이렉트용)", description = "카카오 OAuth 리다이렉트 URI에서 호출되는 콜백 엔드포인트입니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "로그인 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 인증 코드")
-    })
-    @GetMapping("/login/kakao")
-    public User handleKakaoRedirectCallback(
-            @Parameter(description = "카카오 인증 코드", required = true) @RequestParam String code, 
-            HttpSession session) {
-        // 로그인 처리 + 세션 수립 (JSESSIONID가 Set-Cookie로 내려감)
-        return authService.loginWithKakaoCode(code, session);
-    }
+    // @Operation(summary = "카카오 로그인 콜백 (카카오 리다이렉트용)", description = "카카오 OAuth 리다이렉트 URI에서 호출되는 콜백 엔드포인트입니다.")
+    // @ApiResponses(value = {
+    //         @ApiResponse(responseCode = "200", description = "로그인 성공"),
+    //         @ApiResponse(responseCode = "400", description = "잘못된 인증 코드")
+    // })
+    // @GetMapping("/login/kakao")
+    // public User handleKakaoRedirectCallback(
+    //         @Parameter(description = "카카오 인증 코드", required = true) @RequestParam String code, 
+    //         HttpSession session) {
+    //     // 로그인 처리 + 세션 수립 (JSESSIONID가 Set-Cookie로 내려감)
+    //     return authService.loginWithKakaoCode(code, session);
+    // }
 
     @Operation(summary = "현재 사용자 조회", description = "현재 로그인된 사용자 정보를 조회합니다.")
     @ApiResponses(value = {

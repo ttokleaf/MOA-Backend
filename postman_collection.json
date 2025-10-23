@@ -6,6 +6,40 @@
   },
   "item": [
     {
+      "name": "🚀 테스트 환경 초기화",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/test-setup",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "test-setup"]
+        }
+      }
+    },
+    {
+      "name": "📝 테스트용 가계부 생성",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/accountbooks/test-create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "accountbooks", "test-create"]
+        }
+      }
+    },
+    {
       "name": "가계부 생성",
       "request": {
         "method": "POST",
