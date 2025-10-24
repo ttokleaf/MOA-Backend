@@ -22,6 +22,9 @@ public class CalendarStatsDto {
     // 총합 (수입 - 지출)
     private Long total;
     
+    // 총 저축
+    private Long totalSavings;
+    
     // 예산에서 제외된 총 합계
     private Long totalExcludedFromBudget;
     

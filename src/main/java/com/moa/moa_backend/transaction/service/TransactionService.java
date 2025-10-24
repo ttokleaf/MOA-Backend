@@ -314,6 +314,7 @@ public class TransactionService {
         // 월별 통계 조회
         Long totalIncome = transactionRepository.getTotalIncomeByMonth(accountBook, year, month);
         Long totalExpense = transactionRepository.getTotalExpenseByMonth(accountBook, year, month);
+        Long totalSavings = transactionRepository.getTotalSavingsByMonth(accountBook, year, month);
         Long totalExcludedFromBudget = transactionRepository.getTotalExcludedFromBudgetByMonth(accountBook, year, month);
         Long total = totalIncome - totalExpense;
 
@@ -321,6 +322,7 @@ public class TransactionService {
                 .totalIncome(totalIncome)
                 .totalExpense(totalExpense)
                 .total(total)
+                .totalSavings(totalSavings)
                 .totalExcludedFromBudget(totalExcludedFromBudget)
                 .year(year)
                 .month(month)
@@ -409,6 +411,7 @@ public class TransactionService {
         // 기간별 통계 조회
         Long totalIncome = transactionRepository.getTotalIncomeByDateRange(accountBook, startDate, endDate);
         Long totalExpense = transactionRepository.getTotalExpenseByDateRange(accountBook, startDate, endDate);
+        Long totalSavings = transactionRepository.getTotalSavingsByDateRange(accountBook, startDate, endDate);
         Long totalExcludedFromBudget = transactionRepository.getTotalExcludedFromBudgetByDateRange(accountBook, startDate, endDate);
         Long total = totalIncome - totalExpense;
 
@@ -416,6 +419,7 @@ public class TransactionService {
                 .totalIncome(totalIncome)
                 .totalExpense(totalExpense)
                 .total(total)
+                .totalSavings(totalSavings)
                 .totalExcludedFromBudget(totalExcludedFromBudget)
                 .startDate(startDate)
                 .endDate(endDate)

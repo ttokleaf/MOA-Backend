@@ -159,6 +159,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                                @Param("endDate") LocalDate endDate);
 
     /**
+     * 특정 기간의 총 저축 조회
+     */
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
+           "AND t.type = 'SAVINGS' AND t.isActive = true AND t.transactionDate BETWEEN :startDate AND :endDate")
+    Long getTotalSavingsByDateRange(@Param("accountBook") AccountBook accountBook,
+                                    @Param("startDate") LocalDate startDate,
+                                    @Param("endDate") LocalDate endDate);
+
+    /**
      * 특정 월의 총 수입 조회
      */
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
@@ -187,6 +196,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Long getTotalExcludedFromBudgetByMonth(@Param("accountBook") AccountBook accountBook,
                                            @Param("year") int year,
                                            @Param("month") int month);
+
+    /**
+     * 특정 월의 총 저축 조회
+     */
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
+           "AND t.type = 'SAVINGS' AND t.isActive = true " +
+           "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
+    Long getTotalSavingsByMonth(@Param("accountBook") AccountBook accountBook,
+                                @Param("year") int year,
+                                @Param("month") int month);
 
     /**
      * 특정 날짜의 거래 내역 조회 (프로필 정보 포함)
