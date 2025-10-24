@@ -6,6 +6,7 @@ import com.moa.moa_backend.accountbook.domain.AccountBookUser;
 import com.moa.moa_backend.accountbook.dto.*;
 import com.moa.moa_backend.accountbook.repository.AccountBookRepository;
 import com.moa.moa_backend.accountbook.repository.AccountBookUserRepository;
+import com.moa.moa_backend.category.service.CategoryService;
 import com.moa.moa_backend.paymentmethod.service.PaymentMethodService;
 import com.moa.moa_backend.user.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AccountBookService {
     private final AccountBookRepository accountBookRepository;
     private final AccountBookUserRepository accountBookUserRepository;
     private final PaymentMethodService paymentMethodService;
+    private final CategoryService categoryService;
 
     /**
      * 사용자가 접근 가능한 가계부를 조회합니다.
@@ -75,6 +77,14 @@ public class AccountBookService {
             log.info("가계부 {}의 기본 결제 수단 생성 완료", savedAccountBook.getId());
         } catch (Exception e) {
             log.error("가계부 {}의 기본 결제 수단 생성 실패: {}", savedAccountBook.getId(), e.getMessage());
+        }
+
+        // 기본 카테고리 생성
+        try {
+            categoryService.createDefaultCategories(savedAccountBook, user);
+            log.info("가계부 {}의 기본 카테고리 생성 완료", savedAccountBook.getId());
+        } catch (Exception e) {
+            log.error("가계부 {}의 기본 카테고리 생성 실패: {}", savedAccountBook.getId(), e.getMessage());
         }
 
         log.info("가계부 생성 완료: ID={}, 이름={}, 생성자={}", 
