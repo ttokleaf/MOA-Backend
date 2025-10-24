@@ -31,7 +31,7 @@ public class UserService {
     }
 
 
-    private User getCurrentUser(HttpSession session) {
+    public User getCurrentUser(HttpSession session) {
         Object userId = session.getAttribute("LOGIN_USER_ID");
         if (userId == null) {
             return null;
