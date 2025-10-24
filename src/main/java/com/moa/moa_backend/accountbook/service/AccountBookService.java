@@ -6,6 +6,7 @@ import com.moa.moa_backend.accountbook.domain.AccountBookUser;
 import com.moa.moa_backend.accountbook.dto.*;
 import com.moa.moa_backend.accountbook.repository.AccountBookRepository;
 import com.moa.moa_backend.accountbook.repository.AccountBookUserRepository;
+import com.moa.moa_backend.paymentmethod.service.PaymentMethodService;
 import com.moa.moa_backend.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,29 @@ public class AccountBookService {
 
     private final AccountBookRepository accountBookRepository;
     private final AccountBookUserRepository accountBookUserRepository;
+    private final PaymentMethodService paymentMethodService;
+
+    /**
+     * 사용자가 접근 가능한 가계부를 조회합니다.
+     */
+    public AccountBook getAccountBookByIdAndUser(Long accountBookId, User user) {
+        // 가계부 존재 확인
+        AccountBook accountBook = accountBookRepository.findById(accountBookId)
+                .orElse(null);
+        
+        if (accountBook == null) {
+            return null;
+        }
+
+        // 사용자가 해당 가계부에 참여하고 있는지 확인
+        boolean isParticipant = accountBookUserRepository.existsByAccountBookAndUser(accountBook, user);
+        
+        if (!isParticipant) {
+            return null;
+        }
+
+        return accountBook;
+    }
 
     // 가계부 생성
     @Transactional
@@ -44,6 +68,14 @@ public class AccountBookService {
 
         // 저장
         AccountBook savedAccountBook = accountBookRepository.save(accountBook);
+
+        // 기본 결제 수단 생성
+        try {
+            paymentMethodService.createDefaultPaymentMethods(savedAccountBook, user);
+            log.info("가계부 {}의 기본 결제 수단 생성 완료", savedAccountBook.getId());
+        } catch (Exception e) {
+            log.error("가계부 {}의 기본 결제 수단 생성 실패: {}", savedAccountBook.getId(), e.getMessage());
+        }
 
         log.info("가계부 생성 완료: ID={}, 이름={}, 생성자={}", 
                 savedAccountBook.getId(), savedAccountBook.getName(), user.getNickname());
