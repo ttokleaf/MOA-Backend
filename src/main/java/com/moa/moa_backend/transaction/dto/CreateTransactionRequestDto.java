@@ -49,7 +49,13 @@ public class CreateTransactionRequestDto {
     @Schema(description = "예산에서 제외 여부", example = "false")
     private Boolean isExcludedFromBudget = false;
 
-    @Schema(description = "반복 타입", example = "NONE", allowableValues = {"NONE", "DAILY", "WEEKLY", "MONTHLY", "YEARLY"})
-    private RecurringType recurringType = RecurringType.NONE;
+    @Schema(description = "반복 여부", example = "false")
+    private Boolean isRecurring = false;
+
+    @Schema(description = "반복 타입 (반복 여부가 true일 때 필수)", example = "MONTHLY", allowableValues = {"DAILY", "WEEKLY", "MONTHLY", "YEARLY"})
+    private RecurringType recurringType;
+
+    @Schema(description = "반복 종료 날짜 (반복 여부가 true일 때 필수)", example = "2025-12-19")
+    private LocalDate recurringEndDate;
 }
 

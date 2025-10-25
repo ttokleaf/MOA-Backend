@@ -230,5 +230,23 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Object[]> getDailyStatsByMonth(@Param("accountBook") AccountBook accountBook,
                                         @Param("year") int year,
                                         @Param("month") int month);
+
+    /**
+     * 특정 반복 거래에 연결된 미래 거래들 조회
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.recurringTransaction = :recurringTransaction " +
+           "AND t.transactionDate > :currentDate AND t.isActive = true " +
+           "ORDER BY t.transactionDate ASC")
+    List<Transaction> findByRecurringTransactionAndFutureDate(
+            @Param("recurringTransaction") com.moa.moa_backend.recurring.domain.RecurringTransaction recurringTransaction,
+            @Param("currentDate") LocalDate currentDate);
+
+    /**
+     * 특정 반복 거래에 연결된 모든 거래들 조회
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.recurringTransaction = :recurringTransaction " +
+           "AND t.isActive = true ORDER BY t.transactionDate ASC")
+    List<Transaction> findByRecurringTransaction(
+            @Param("recurringTransaction") com.moa.moa_backend.recurring.domain.RecurringTransaction recurringTransaction);
 }
 

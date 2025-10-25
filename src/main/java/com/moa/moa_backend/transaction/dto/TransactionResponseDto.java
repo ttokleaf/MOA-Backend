@@ -52,6 +52,12 @@ public class TransactionResponseDto {
     @Schema(description = "반복 타입", example = "NONE")
     private RecurringType recurringType;
 
+    @Schema(description = "원본 반복 거래 여부", example = "false")
+    private Boolean isOriginalRecurring;
+
+    @Schema(description = "연결된 반복 거래 ID", example = "1")
+    private Long recurringTransactionId;
+
     @Schema(description = "활성화 여부", example = "true")
     private Boolean isActive;
 
@@ -78,6 +84,9 @@ public class TransactionResponseDto {
                 .memo(transaction.getMemo())
                 .isExcludedFromBudget(transaction.getIsExcludedFromBudget())
                 .recurringType(transaction.getRecurringType())
+                .isOriginalRecurring(transaction.getIsOriginalRecurring())
+                .recurringTransactionId(transaction.getRecurringTransaction() != null ? 
+                        transaction.getRecurringTransaction().getId() : null)
                 .isActive(transaction.getIsActive())
                 .createdAt(transaction.getCreatedAt())
                 .createdById(transaction.getCreatedBy().getId())

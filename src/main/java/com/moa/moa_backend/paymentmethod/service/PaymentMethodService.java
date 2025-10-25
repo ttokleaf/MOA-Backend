@@ -11,7 +11,6 @@ import com.moa.moa_backend.paymentmethod.repository.PaymentMethodRepository;
 import com.moa.moa_backend.user.domain.User;
 import com.moa.moa_backend.user.service.UserService;
 import jakarta.servlet.http.HttpSession;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
