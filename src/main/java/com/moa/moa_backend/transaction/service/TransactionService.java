@@ -6,6 +6,7 @@ import com.moa.moa_backend.category.domain.Category;
 import com.moa.moa_backend.category.repository.CategoryRepository;
 import com.moa.moa_backend.paymentmethod.domain.PaymentMethod;
 import com.moa.moa_backend.paymentmethod.repository.PaymentMethodRepository;
+import com.moa.moa_backend.recurring.service.RecurringTransactionService;
 import com.moa.moa_backend.transaction.domain.RecurringType;
 import com.moa.moa_backend.transaction.domain.Transaction;
 import com.moa.moa_backend.transaction.domain.TransactionType;
@@ -35,17 +36,20 @@ public class TransactionService {
     private final AccountBookService accountBookService;
     private final CategoryRepository categoryRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final RecurringTransactionService recurringTransactionService;
 
     public TransactionService(TransactionRepository transactionRepository,
                              UserService userService,
                              AccountBookService accountBookService,
                              CategoryRepository categoryRepository,
-                             PaymentMethodRepository paymentMethodRepository) {
+                             PaymentMethodRepository paymentMethodRepository,
+                             RecurringTransactionService recurringTransactionService) {
         this.transactionRepository = transactionRepository;
         this.userService = userService;
         this.accountBookService = accountBookService;
         this.categoryRepository = categoryRepository;
         this.paymentMethodRepository = paymentMethodRepository;
+        this.recurringTransactionService = recurringTransactionService;
     }
 
     @Transactional
@@ -77,11 +81,38 @@ public class TransactionService {
                 .createdBy(currentUser)
                 .memo(request.getMemo())
                 .isExcludedFromBudget(request.getIsExcludedFromBudget())
-                .recurringType(request.getRecurringType() != null ? request.getRecurringType() : RecurringType.NONE)
-                .isActive(true)
+                .recurringType(request.getIsRecurring() != null && request.getIsRecurring() ? 
+                        request.getRecurringType() : RecurringType.NONE)
+                .isOriginalRecurring(request.getIsRecurring() != null && request.getIsRecurring())
+                .isActive(request.getIsRecurring() != null && request.getIsRecurring() ? false : true) // 반복 거래는 원본을 숨김
                 .build();
 
         Transaction savedTransaction = transactionRepository.save(transaction);
+
+        // 반복 거래 설정이 있는 경우 반복 거래 생성
+        if (request.getIsRecurring() != null && request.getIsRecurring()) {
+            if (request.getRecurringType() == null) {
+                throw new RuntimeException("반복 타입은 필수입니다.");
+            }
+            if (request.getRecurringEndDate() == null) {
+                throw new RuntimeException("반복 거래의 종료 날짜는 필수입니다.");
+            }
+            
+            // 반복 거래 생성
+            var recurringTransaction = recurringTransactionService.createRecurringTransaction(
+                    session, 
+                    accountBookId, 
+                    savedTransaction.getId(), 
+                    request.getRecurringType(), 
+                    request.getRecurringEndDate());
+            
+            // 원본 거래와 반복 거래 연결
+            savedTransaction.setRecurringTransaction(recurringTransaction);
+            transactionRepository.save(savedTransaction);
+            
+            log.info("반복 거래 생성 완료 - 가계부 ID: {}, 사용자 ID: {}, 거래 ID: {}, 반복 타입: {}",
+                    accountBookId, currentUser.getId(), savedTransaction.getId(), request.getRecurringType());
+        }
 
         log.info("거래 내역 생성 완료 - 가계부 ID: {}, 사용자 ID: {}, 거래 ID: {}",
                 accountBookId, currentUser.getId(), savedTransaction.getId());
@@ -169,6 +200,29 @@ public class TransactionService {
         PaymentMethod paymentMethod = paymentMethodRepository.findByIdAndAccountBook(request.getPaymentMethodId(), accountBook)
                 .orElseThrow(() -> new RuntimeException("결제 수단을 찾을 수 없습니다."));
 
+        // 거래 타입별 수정 처리
+        if (transaction.getIsOriginalRecurring()) {
+            // 원본 반복 거래 수정
+            updateOriginalRecurringTransaction(transaction, request, category, paymentMethod);
+        } else {
+            // 일반 거래 또는 생성된 반복 거래 수정
+            updateRegularTransaction(transaction, request, category, paymentMethod);
+        }
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        log.info("거래 내역 수정 완료 - 가계부 ID: {}, 사용자 ID: {}, 거래 ID: {}",
+                accountBookId, currentUser.getId(), savedTransaction.getId());
+
+        return TransactionResponseDto.from(savedTransaction);
+    }
+
+    /**
+     * 원본 반복 거래 수정
+     */
+    private void updateOriginalRecurringTransaction(Transaction transaction, UpdateTransactionRequestDto request, 
+                                                   Category category, PaymentMethod paymentMethod) {
+        // 기본 거래 정보 수정
         transaction.setDescription(request.getDescription());
         transaction.setAmount(request.getAmount());
         transaction.setType(request.getType());
@@ -177,14 +231,59 @@ public class TransactionService {
         transaction.setPaymentMethod(paymentMethod);
         transaction.setMemo(request.getMemo());
         transaction.setIsExcludedFromBudget(request.getIsExcludedFromBudget());
-        transaction.setRecurringType(request.getRecurringType() != null ? request.getRecurringType() : RecurringType.NONE);
+        
+        // 반복 설정이 변경된 경우 처리
+        if (request.getIsRecurring() != null && request.getIsRecurring()) {
+            if (request.getRecurringType() != null && request.getRecurringType() != transaction.getRecurringType()) {
+                // 반복 타입 변경 시 반복 거래 설정 업데이트
+                updateRecurringTransactionSettings(transaction, request.getRecurringType(), request.getRecurringEndDate());
+            }
+            transaction.setRecurringType(request.getRecurringType());
+            
+            // 원본 거래 정보가 변경된 경우 미래 복제 거래들도 업데이트
+            if (transaction.getRecurringTransaction() != null) {
+                updateFutureRecurringTransactions(transaction.getRecurringTransaction(), request, category, paymentMethod);
+            }
+        } else {
+            // 반복 해제 시
+            transaction.setRecurringType(RecurringType.NONE);
+            transaction.setIsOriginalRecurring(false);
+            // 연결된 반복 거래 비활성화 및 미래 복제 거래들 삭제
+            if (transaction.getRecurringTransaction() != null) {
+                recurringTransactionService.deactivateRecurringTransaction(
+                    null, transaction.getAccountBook().getId(), transaction.getRecurringTransaction().getId());
+            }
+        }
+    }
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
+    /**
+     * 일반 거래 또는 생성된 반복 거래 수정
+     */
+    private void updateRegularTransaction(Transaction transaction, UpdateTransactionRequestDto request, 
+                                         Category category, PaymentMethod paymentMethod) {
+        // 기본 거래 정보 수정
+        transaction.setDescription(request.getDescription());
+        transaction.setAmount(request.getAmount());
+        transaction.setType(request.getType());
+        transaction.setTransactionDate(request.getTransactionDate());
+        transaction.setCategory(category);
+        transaction.setPaymentMethod(paymentMethod);
+        transaction.setMemo(request.getMemo());
+        transaction.setIsExcludedFromBudget(request.getIsExcludedFromBudget());
+        transaction.setRecurringType(RecurringType.NONE);
+        
+        // 생성된 반복 거래는 원본과 독립적으로 수정
+        // 반복 설정 변경은 허용하지 않음
+    }
 
-        log.info("거래 내역 수정 완료 - 가계부 ID: {}, 사용자 ID: {}, 거래 ID: {}",
-                accountBookId, currentUser.getId(), savedTransaction.getId());
-
-        return TransactionResponseDto.from(savedTransaction);
+    /**
+     * 반복 거래 설정 업데이트
+     */
+    private void updateRecurringTransactionSettings(Transaction transaction, RecurringType recurringType, LocalDate endDate) {
+        if (transaction.getRecurringTransaction() != null) {
+            recurringTransactionService.updateRecurringTransactionSettings(
+                transaction.getRecurringTransaction().getId(), recurringType, endDate);
+        }
     }
 
     @Transactional
@@ -204,6 +303,11 @@ public class TransactionService {
 
         if (!transaction.getIsActive()) {
             throw new RuntimeException("이미 삭제된 거래 내역입니다.");
+        }
+
+        // 원본 반복 거래인 경우 미래 복제 거래들도 함께 삭제
+        if (transaction.getIsOriginalRecurring() && transaction.getRecurringTransaction() != null) {
+            deleteFutureRecurringTransactions(transaction.getRecurringTransaction());
         }
 
         transaction.setIsActive(false);
@@ -514,6 +618,49 @@ public class TransactionService {
                 .paymentMethodName(transaction.getPaymentMethod().getName())
                 .memo(transaction.getMemo())
                 .build();
+    }
+
+    /**
+     * 미래 복제 거래들을 삭제 처리
+     */
+    private void deleteFutureRecurringTransactions(com.moa.moa_backend.recurring.domain.RecurringTransaction recurringTransaction) {
+        LocalDate currentDate = LocalDate.now();
+        List<Transaction> futureTransactions = transactionRepository.findByRecurringTransactionAndFutureDate(
+                recurringTransaction, currentDate);
+        
+        for (Transaction futureTransaction : futureTransactions) {
+            futureTransaction.setIsActive(false);
+            transactionRepository.save(futureTransaction);
+        }
+        
+        log.info("미래 복제 거래 {}개 삭제 완료 - 반복 거래 ID: {}", 
+                futureTransactions.size(), recurringTransaction.getId());
+    }
+
+    /**
+     * 미래 복제 거래들을 업데이트 처리
+     */
+    private void updateFutureRecurringTransactions(com.moa.moa_backend.recurring.domain.RecurringTransaction recurringTransaction,
+                                                   UpdateTransactionRequestDto request, Category category, PaymentMethod paymentMethod) {
+        LocalDate currentDate = LocalDate.now();
+        List<Transaction> futureTransactions = transactionRepository.findByRecurringTransactionAndFutureDate(
+                recurringTransaction, currentDate);
+        
+        for (Transaction futureTransaction : futureTransactions) {
+            // 기본 거래 정보 업데이트 (날짜는 제외)
+            futureTransaction.setDescription(request.getDescription());
+            futureTransaction.setAmount(request.getAmount());
+            futureTransaction.setType(request.getType());
+            futureTransaction.setCategory(category);
+            futureTransaction.setPaymentMethod(paymentMethod);
+            futureTransaction.setMemo(request.getMemo());
+            futureTransaction.setIsExcludedFromBudget(request.getIsExcludedFromBudget());
+            
+            transactionRepository.save(futureTransaction);
+        }
+        
+        log.info("미래 복제 거래 {}개 업데이트 완료 - 반복 거래 ID: {}", 
+                futureTransactions.size(), recurringTransaction.getId());
     }
 }
 

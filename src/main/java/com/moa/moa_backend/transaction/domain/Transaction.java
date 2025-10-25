@@ -3,6 +3,7 @@ package com.moa.moa_backend.transaction.domain;
 import com.moa.moa_backend.accountbook.domain.AccountBook;
 import com.moa.moa_backend.category.domain.Category;
 import com.moa.moa_backend.paymentmethod.domain.PaymentMethod;
+import com.moa.moa_backend.recurring.domain.RecurringTransaction;
 import com.moa.moa_backend.user.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -71,6 +72,14 @@ public class Transaction {
     @Builder.Default
     @Column(nullable = false)
     private Boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recurring_transaction_id")
+    private RecurringTransaction recurringTransaction;
+
+    @Builder.Default
+    @Column(name = "is_original_recurring", nullable = false)
+    private Boolean isOriginalRecurring = false;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

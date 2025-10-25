@@ -1,5 +1,7 @@
 package com.moa.moa_backend.transaction.controller;
 
+import com.moa.moa_backend.recurring.dto.RecurringTransactionResponseDto;
+import com.moa.moa_backend.recurring.service.RecurringTransactionService;
 import com.moa.moa_backend.transaction.domain.TransactionType;
 import com.moa.moa_backend.transaction.dto.*;
 import com.moa.moa_backend.transaction.service.TransactionService;
@@ -28,6 +30,7 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final RecurringTransactionService recurringTransactionService;
 
     @Operation(summary = "거래 내역 생성", description = "새로운 거래 내역을 생성합니다.")
     @ApiResponses(value = {
@@ -242,6 +245,37 @@ public class TransactionController {
             HttpSession session) {
         List<DailyTransactionDto> response = transactionService.getDailyTransactions(session, accountBookId, date);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "반복 거래 목록 조회", description = "가계부의 반복 거래 목록을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            @ApiResponse(responseCode = "404", description = "가계부를 찾을 수 없음")
+    })
+    @SecurityRequirement(name = "cookieAuth")
+    @GetMapping("/recurring")
+    public ResponseEntity<List<RecurringTransactionResponseDto>> getRecurringTransactions(
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("accountBookId") Long accountBookId,
+            HttpSession session) {
+        List<RecurringTransactionResponseDto> response = recurringTransactionService.getRecurringTransactions(session, accountBookId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "반복 거래 비활성화", description = "반복 거래를 비활성화합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "비활성화 성공"),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+            @ApiResponse(responseCode = "404", description = "가계부 또는 반복 거래를 찾을 수 없음")
+    })
+    @SecurityRequirement(name = "cookieAuth")
+    @DeleteMapping("/recurring/{recurringTransactionId}")
+    public ResponseEntity<Void> deactivateRecurringTransaction(
+            @Parameter(description = "가계부 ID", required = true) @PathVariable("accountBookId") Long accountBookId,
+            @Parameter(description = "반복 거래 ID", required = true) @PathVariable("recurringTransactionId") Long recurringTransactionId,
+            HttpSession session) {
+        recurringTransactionService.deactivateRecurringTransaction(session, accountBookId, recurringTransactionId);
+        return ResponseEntity.ok().build();
     }
 }
 
