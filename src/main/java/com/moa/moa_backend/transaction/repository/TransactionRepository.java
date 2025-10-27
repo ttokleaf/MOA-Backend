@@ -101,10 +101,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Long getTotalIncomeByAccountBook(@Param("accountBook") AccountBook accountBook);
 
     /**
-     * 가계부의 총 지출 금액 계산
+     * 가계부의 총 지출 금액 계산 (예산에서 제외되지 않은 거래만)
      */
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
-           "AND t.type = 'EXPENSE' AND t.isActive = true")
+           "AND t.type = 'EXPENSE' AND t.isActive = true AND t.isExcludedFromBudget = false")
     Long getTotalExpenseByAccountBook(@Param("accountBook") AccountBook accountBook);
 
     /**
@@ -141,10 +141,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                    @Param("endDate") LocalDate endDate);
 
     /**
-     * 특정 기간의 총 지출 조회
+     * 특정 기간의 총 지출 조회 (예산에서 제외되지 않은 거래만)
      */
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
-           "AND t.type = 'EXPENSE' AND t.isActive = true AND t.transactionDate BETWEEN :startDate AND :endDate")
+           "AND t.type = 'EXPENSE' AND t.isActive = true AND t.isExcludedFromBudget = false AND t.transactionDate BETWEEN :startDate AND :endDate")
     Long getTotalExpenseByDateRange(@Param("accountBook") AccountBook accountBook,
                                     @Param("startDate") LocalDate startDate,
                                     @Param("endDate") LocalDate endDate);
@@ -178,10 +178,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                @Param("month") int month);
 
     /**
-     * 특정 월의 총 지출 조회
+     * 특정 월의 총 지출 조회 (예산에서 제외되지 않은 거래만)
      */
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.accountBook = :accountBook " +
-           "AND t.type = 'EXPENSE' AND t.isActive = true " +
+           "AND t.type = 'EXPENSE' AND t.isActive = true AND t.isExcludedFromBudget = false " +
            "AND YEAR(t.transactionDate) = :year AND MONTH(t.transactionDate) = :month")
     Long getTotalExpenseByMonth(@Param("accountBook") AccountBook accountBook,
                                 @Param("year") int year,
