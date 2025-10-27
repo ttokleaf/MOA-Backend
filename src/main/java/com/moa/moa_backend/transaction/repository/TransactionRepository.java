@@ -22,8 +22,9 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     /**
-     * 가계부의 활성화된 거래 내역을 거래일시 내림차순으로 조회
+     * ID 목록으로 거래 내역 조회
      */
+    List<Transaction> findByIdIn(List<Long> ids);
     List<Transaction> findByAccountBookAndIsActiveTrueOrderByTransactionDateDesc(AccountBook accountBook);
 
     /**
